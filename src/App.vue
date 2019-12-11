@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <van-overlay :show="isLoad" >
+    <van-overlay :show="isLoad">
       <div class="wrapper" @click.stop>
         <van-loading size="24px" type="spinner" color="#1989fa">加载中...</van-loading>
       </div>
@@ -11,12 +11,13 @@
 
 <script>
 import { GetAll, All } from "@/api/ProductState.js"; // 获取数据路径
-import MusicType from "@/assets/data/musictype.json"; // 所有线路 
+import MusicType from "@/assets/data/musictype.json"; // 所有线路
 export default {
   name: "hello",
   data() {
     return {
-      intervals: 60 * 60, // 定时器 秒单位
+      intervals: 60*60, // 定时器 秒单位
+      scale: 60 * 60,   // 刻度
       timer: "",
       datalist: [],
       isLoad: false,
@@ -35,7 +36,8 @@ export default {
   },
   mounted() {
     this.LoadData();
-    this.timer = setInterval(this.LoadData, this.intervals * 1000);
+    setInterval(this.getlog, this.intervals * 1000);
+    setInterval(this.LoadData, this.intervals * 1000);
   },
   watch: {
     // 如果 `question` 发生改变，这个函数就会运行
@@ -52,6 +54,9 @@ export default {
     // }
   },
   methods: {
+    getlog() {
+      console.log(1);
+    },
     // 返回时间
     getdatastr(date) {
       return (
@@ -92,6 +97,7 @@ export default {
       //  _this.isLoad = false;
       // return;
       //
+      _this.count = 0;
       for (var i = 1; i <= _this.Hour; i++) {
         // 遍历获取设备状态
         MusicType.currentType.forEach(item => {
@@ -122,7 +128,7 @@ export default {
             }
           });
         });
-      } 
+      }
     },
     LoadDataE(result) {
       var _this = this;
@@ -195,7 +201,7 @@ export default {
         },
         xAxis: {
           type: "time",
-          interval: _this.intervals * 1000,
+          interval: _this.scale * 1000,
           axisLabel: {
             // interval: 0, //代表显示所有x轴标签
             // rotate: 45, //代表逆时针旋转45度
