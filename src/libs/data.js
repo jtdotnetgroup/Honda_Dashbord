@@ -1,8 +1,7 @@
-import MusicType from "@/assets/data/musictype.json"    // 所有线路 
-import { All, GetAll } from "@/api/ProductState.js";         // 获取数据路径
+import MusicType from "@/assets/data/musictype.json"    // 所有线路  
 // 请求参数 
 var state = ['运行', '空闲', '报警'];           // 状态描述
-var colors = ["green", "#c3c3c3", "red"]; // 状态颜色 
+var colors = ["green", "gray", "red"]; // 状态颜色 
 
 // 获取Echarts 所需的对象
 function GetList(datalist1) {
@@ -41,11 +40,10 @@ function GetEchartsObj(datalist) {
                 // console(sortBykey(f.list, 'time'));
             }
             sortBykey(f.list, 'time').forEach((item, index) => {
-                if (tmp.name == '6线') { 
-                }
+                
                 // 判断使用颜色
                 var intstate = GetState(item['al'] * 1, item['rs'] * 1);
-                // 开始时间与结束时间
+                // 当前数据时间
                 CurrentTime = getdatastr(new Date(item['time']));
                 // 第一条
                 if (index === 0) {
@@ -84,17 +82,19 @@ function GetEchartsObj(datalist) {
                             }
                         },
                         name: f.name + ' ' + state[CurrentState],   // 悬浮时显示的名字
-                        value: [num, FirstTime, CurrentTime] //0,1,2代表y轴的索引，后两位代表x轴数据开始和结束
+                        value: [num, FirstTime, CurrentTime==null?'1':CurrentTime] //0,1,2代表y轴的索引，后两位代表x轴数据开始和结束
                     });
                 }
                 // 添加数据
                 if (tf && index !== 0) {
-                    series.push({
+                    if(end==null){end =start}
+                    series.push({ 
                         itemStyle:
                         {
                             normal: {
-                                color: colors[CurrentState]  //条形颜色
-                            }
+                                color: colors[CurrentState]  //条形颜色 
+                            },
+                            emphasis: { label: { show: true } }
                         },
                         name: f.name + ' ' + state[CurrentState],   // 悬浮时显示的名字
                         value: [num, start, end] //0,1,2代表y轴的索引，后两位代表x轴数据开始和结束
@@ -113,12 +113,13 @@ function GetEchartsObj(datalist) {
         y: y,
         series: series,
         state: state,
-        colors: colors
+        colors: colors,
+        datalist:datalist
     }
     return result;
 
 }
-
+// 对象集合排序
 function sortBykey(ary, key) {
     return ary.sort(function (a, b) {
         let x = a[key] 
@@ -130,13 +131,12 @@ function sortBykey(ary, key) {
 function GetState(al, rs) {
     var intstate = 0;
     if (al * 1 !== 0) {
-        intstate = 2;
+        return  2;
     } else if (rs * 1 === 3 && al * 1 === 0) {
-        intstate = 0;
+        return  0;
     } else {
-        intstate = 1;
+        return  1;
     }
-    return intstate;
 }
 // 返回时间
 function getdatastr(date) {

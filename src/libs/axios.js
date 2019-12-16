@@ -8,14 +8,12 @@ var baseURL = "";
 // baseURL = "http://192.168.1.165:8080/jitcrm";
 
 var url = window.location.href
-if (url.indexOf('http://192.168.1') >= 0 || url.indexOf('localhost') >= 0) {
-  baseURL = "http://192.168.1.234:8080";
+if (url.indexOf('http://192.168.3') >= 0 || url.indexOf('localhost') >= 0) {
+  baseURL = "http://localhost:53457";
 } else {
-
-}
-// 正式环境
-baseURL = "http://192.168.220.2";
-
+  // 正式环境
+  baseURL = "http://192.168.1.112:8099";
+} 
 // 
 const http = axios.create({
   baseURL: baseURL,

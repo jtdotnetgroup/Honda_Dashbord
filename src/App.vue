@@ -1,14 +1,54 @@
 <template>
   <div id="app">
+    <!-- 加载框 -->
     <van-overlay :show="isLoad">
-      <div class="wrapper" @click.stop>
-        <van-loading size="24px" type="spinner" color="#1989fa">加载中...</van-loading>
+      <div class="wrapper">
+        <van-loading size="24px" type="spinner" color="#1989fa">加载中({{showPercentage}}%)...</van-loading>
       </div>
     </van-overlay>
-    <div id="myChart" :style="{width: '100%', height: '90vh'}"></div>
+    <!-- 定时刷新秒数 -->
+    <el-input-number
+      v-model="intervals"
+      @change="handleChange"
+      :min="60"
+      :max="3600"
+      :step="10"
+      label="描述文字"
+      style="position: fixed;top: 15px;right: 180px;"
+      size="mini"
+      :disabled="checked"
+    >></el-input-number>
+    <el-switch
+      v-model="checked"
+      active-color="#13ce66"
+      inactive-text="秒"
+      active-text="是否定时刷新"
+      style="position: fixed;top: 18px;right: 15px;"
+    ></el-switch>
+    <!-- 查询范围 -->
+    <el-date-picker
+      v-model="startend"
+      type="datetimerange"
+      range-separator="至"
+      start-placeholder="开始日期"
+      end-placeholder="结束日期"
+      style="margin:0px 10px;"
+      @change="changeDate"
+      format="yyyy-MM-dd HH:mm:ss"
+    ></el-date-picker>
+    <el-button type="primary" round @click="search" :disabled="startend==null">查询</el-button>
+    <!-- 增加高度 -->
+    <div>
+      &nbsp;
+      <br />
+      <hr />
+      <br />
+    </div>
+    <!-- 显示Echarts -->
+    <div id="myChart" :style="{width: '100%', height: '80vh'}"></div>
   </div>
 </template>
-
+<!-- 脚本 -->
 <script>
 import { GetAll, All } from "@/api/ProductState.js"; // 获取数据路径
 import MusicType from "@/assets/data/musictype.json"; // 所有线路
@@ -16,53 +56,167 @@ export default {
   name: "hello",
   data() {
     return {
+      startend: null, // 搜索范围日期
+      checked: false, // 是否定时刷新
       intervals: 60*60, // 定时器 秒单位
-      scale: 60 * 60,   // 刻度
-      timer: "",
-      datalist: [],
-      isLoad: false,
+      timer: null, // 定时器名称
+      scale: 60 * 60, // 刻度
+      datalist: [], // 访问回来得到的数据
+      isLoad: false, // 是否显示加载框
       param: {
         sysid: "", // 产品id
         starttime: null, // 开始时间
         endtime: null, // 结束时间
         type: "5SECONDS", // 5秒间隔
-        intervals: 5, // 时间轴间隔时间
-        start: 0, // 滚动条开始位置
-        end: 100 // 滚动条结束位置
+        intervals: 5 // 时间轴间隔时间
       },
-      Hour: 24,
-      count: 0
+      dataZoomstart: 0, // 滚动条开始位置
+      dataZoomend: 100, // 滚动条结束位置
+      Hour: 24, // 查询多少时间
+      count: 0, // 已经访问总条数
+      searchcount: 0, // （搜索）已经访问总条数
+      MusicTypeCount: MusicType.currentType.length, // 产品线的条数
+      showPercentage: "", // 加载状态
+      result: null, // 返回结果
+      dateList: [] // 查询的日期List
     };
   },
+  //
   mounted() {
     this.LoadData();
-    setInterval(this.getlog, this.intervals * 1000);
-    setInterval(this.LoadData, this.intervals * 1000);
   },
+  // 监听变量值
   watch: {
     // 如果 `question` 发生改变，这个函数就会运行
+    // 获取数据条数
     count: function(newQuestion) {
+      // 加载信息
+      this.showPercentage = parseFloat(
+        (newQuestion / (this.MusicTypeCount * this.Hour)) * 100
+      ).toFixed(2);
+      // 加载完毕开始填充Echarts
       if (newQuestion == MusicType.currentType.length * this.Hour) {
+        //
+        this.LoadDataE(this.$GetList(this.datalist));
+        this.isLoad = false;
+        this.checked = true;
+      }
+    },
+    // 定时刷新按钮事件
+    checked: function(newQuestion) {
+      if (newQuestion) {
+        this.timer = setInterval(() => {
+          this.LoadData();
+        }, this.intervals * 1000);
+      } else { 
+        clearInterval(this.timer);
+        this.timer = null;
+      }
+    },
+    searchcount: function(newQuestion) {
+      // 加载信息
+      this.showPercentage = parseFloat(
+        (newQuestion / (this.MusicTypeCount * this.dateList.length)) * 100
+      ).toFixed(2);
+      // 加载完毕开始填充Echarts
+      if (newQuestion == MusicType.currentType.length * this.dateList.length) {
+        //
         this.LoadDataE(this.$GetList(this.datalist));
         this.isLoad = false;
       }
     }
-    // datalist: function(newQuestion) {
-    //   if (this.count === MusicType.currentType.length * this.Hour) {
-    //     this.LoadDataE(this.$GetList(this.datalist));
-    //   }
-    // }
   },
+  // 所有方法
   methods: {
-    getlog() {
-      console.log(1);
+    // 切换时间
+    changeDate(value) {
+      const start = new Date(value[0]);
+      const end = new Date(value[1]);
+      var time = new Date();
+      if (time.getTime() < end.getTime()) {
+        end.setTime(time.getTime());
+      }
+      if (start.getTime() > end.getTime()) {
+        start.setTime(end.getTime() - 24 * 60 * 60 * 1000);
+      }
+      this.startend = [this.getdatastr(start), this.getdatastr(end)];
+      //
+      this.dateList = [];
+      this.getdatelist(start.getTime(), end.getTime());
     },
+    // 递归生成查询日期List
+    getdatelist(start, end) {
+      var time = 24 * 60 * 60 * 1000;
+      if (end - start > time) {
+        this.dateList.push({
+          start: this.getdatastr(new Date(start)),
+          end: this.getdatastr(new Date(start + time))
+        });
+        this.getdatelist(start + time, end);
+      } else {
+        this.dateList.push({
+          start: this.getdatastr(new Date(start)),
+          end: this.getdatastr(new Date(end))
+        });
+      }
+    },
+    // 搜索
+    search() {
+      var _this = this;
+      _this.checked = false;
+      if (_this.isLoad) return;
+      _this.isLoad = true;
+      _this.datalist = [];
+      // _this.count = 48;
+      //  _this.isLoad = false;
+      // return;
+      //
+      _this.searchcount = 0;
+      for (var i = 0; i < _this.dateList.length; i++) {
+        // 遍历获取设备状态
+        MusicType.currentType.forEach(item => {
+          var params = JSON.parse(JSON.stringify(_this.param));
+          params.starttime = _this.dateList[i].start; // 开始时间
+          params.endtime = _this.dateList[i].end; // 结束时间
+          params.sysid = item.id;
+          // 获取数据
+          GetAll(params)
+            .then(res => {
+              if (res.data.code == "0") {
+                var result = _this.datalist.filter(f => {
+                  return f.id === item.id;
+                });
+                if (result.length > 0) {
+                  // result[0].list.concat(res.data.data);
+                  result[0].list.push.apply(result[0].list, res.data.data);
+                  // res.data.data.forEach(tmp => {
+                  //   result[0].list.concat(res.data.data);
+                  // });
+                } else {
+                  _this.datalist.push({
+                    id: item.id,
+                    name: item.name,
+                    list: res.data.data,
+                    intervals: params.intervals
+                  });
+                }
+                _this.searchcount++;
+              }
+            })
+            .catch(err => {
+              _this.searchcount++;
+            });
+        });
+      }
+    },
+    // 切换秒数
+    handleChange() {},
     // 返回时间
     getdatastr(date) {
       return (
         date.getFullYear() +
         "-" +
-        (date.getMonth() + 1) +
+        this.getzf(date.getMonth() + 1) +
         "-" +
         this.getzf(date.getDate()) +
         " " +
@@ -80,9 +234,11 @@ export default {
       }
       return num;
     },
+    // 开始时间
     GetStartTime(j) {
       return this.getdatastr(new Date(new Date().getTime() + j));
     },
+    // 结束时间
     GetEndTime(j) {
       return this.getdatastr(new Date(new Date().getTime() + j));
     },
@@ -105,43 +261,51 @@ export default {
           params.starttime = _this.GetStartTime(time * i); // 开始时间
           params.endtime = _this.GetEndTime(time * (i - 1)); // 结束时间
           params.sysid = item.id;
-          GetAll(params).then(res => {
-            if (res.data.code == "0") {
-              var result = _this.datalist.filter(f => {
-                return f.id === item.id;
-              });
-              if (result.length > 0) {
-                // result[0].list.concat(res.data.data);
-                result[0].list.push.apply(result[0].list, res.data.data);
-                // res.data.data.forEach(tmp => {
-                //   result[0].list.concat(res.data.data);
-                // });
-              } else {
-                _this.datalist.push({
-                  id: item.id,
-                  name: item.name,
-                  list: res.data.data,
-                  intervals: params.intervals
+          // 获取数据
+          GetAll(params)
+            .then(res => {
+              if (res.data.code == "0") {
+                var result = _this.datalist.filter(f => {
+                  return f.id === item.id;
                 });
+                if (result.length > 0) {
+                  // result[0].list.concat(res.data.data);
+                  result[0].list.push.apply(result[0].list, res.data.data);
+                  // res.data.data.forEach(tmp => {
+                  //   result[0].list.concat(res.data.data);
+                  // });
+                } else {
+                  _this.datalist.push({
+                    id: item.id,
+                    name: item.name,
+                    list: res.data.data,
+                    intervals: params.intervals
+                  });
+                }
+                _this.count++;
               }
+            })
+            .catch(err => {
               _this.count++;
-            }
-          });
+            });
         });
       }
     },
+    // 填充echarts
     LoadDataE(result) {
+      // this.result = result;
       var _this = this;
-      console.log(result);
+      // console.log(result);
       // 基于准备好的dom，初始化echarts实例
       var myChart = this.$echarts.init(document.getElementById("myChart")); //加载图形的div
       var colors = result.colors; //两种状态的颜色
       var state = result.state; //两种状态
       var y = result.y;
+
       // echart配置
       var option = {
         title: {
-          text: "设备状态",
+          text: "设备状态                 ",
           left: "center"
         },
         color: colors,
@@ -167,8 +331,8 @@ export default {
             showDataShadow: false,
             bottom: 10,
             height: 10,
-            start: _this.param.start,
-            end: _this.param.end,
+            start: _this.dataZoomstart,
+            end: _this.dataZoomend,
             borderColor: "transparent",
             backgroundColor: "#e2e2e2",
             handleIcon:
@@ -230,7 +394,12 @@ export default {
           }
         },
         yAxis: {
-          data: y
+          data: y,
+          axisLabel: {
+            textStyle: {
+              fontWeight: 700
+            }
+          }
         },
         series: [
           // 用空bar来显示四个图例
@@ -295,6 +464,7 @@ export default {
   }
 };
 </script>
+<!-- 样式脚本 -->
 <style lang="stylus">
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
