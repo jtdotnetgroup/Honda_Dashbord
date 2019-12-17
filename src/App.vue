@@ -35,6 +35,8 @@
       style="margin:0px 10px;"
       @change="changeDate"
       format="yyyy-MM-dd HH:mm:ss"
+      :picker-options="pickerOptions"
+      :default-time="['00:00:00','23:59:59']"
     ></el-date-picker>
     <el-button type="primary" round @click="search" :disabled="startend==null">查询</el-button>
     <!-- 增加高度 -->
@@ -58,7 +60,7 @@ export default {
     return {
       startend: null, // 搜索范围日期
       checked: false, // 是否定时刷新
-      intervals: 60*60, // 定时器 秒单位
+      intervals: 60 * 60, // 定时器 秒单位
       timer: null, // 定时器名称
       scale: 60 * 60, // 刻度
       datalist: [], // 访问回来得到的数据
@@ -78,7 +80,26 @@ export default {
       MusicTypeCount: MusicType.currentType.length, // 产品线的条数
       showPercentage: "", // 加载状态
       result: null, // 返回结果
-      dateList: [] // 查询的日期List
+      dateList: [], // 查询的日期List
+      minDate: "",
+      maxDate: "",
+      pickerOptions: {
+        onPick: ({ maxDate, minDate }) => {
+          this.minDate = minDate;
+          this.maxDate = maxDate;
+        },
+        disabledDate: time => {
+          if (this.minDate) {
+            let range = 2 * 24 * 3600 * 1000 - 1;
+            // console.log(this.getdatastr(this.minDate));
+            return (
+              time.getTime() > this.minDate.getTime() + range ||
+              time.getTime() < this.minDate.getTime() - range
+            );
+          }
+          return time.getTime() > Date.now(); // true 禁止选择
+        }
+      }
     };
   },
   //
@@ -100,6 +121,7 @@ export default {
         this.LoadDataE(this.$GetList(this.datalist));
         this.isLoad = false;
         this.checked = true;
+        this.showPercentage = 0;
       }
     },
     // 定时刷新按钮事件
@@ -108,7 +130,7 @@ export default {
         this.timer = setInterval(() => {
           this.LoadData();
         }, this.intervals * 1000);
-      } else { 
+      } else {
         clearInterval(this.timer);
         this.timer = null;
       }
@@ -119,7 +141,7 @@ export default {
         (newQuestion / (this.MusicTypeCount * this.dateList.length)) * 100
       ).toFixed(2);
       // 加载完毕开始填充Echarts
-      if (newQuestion == MusicType.currentType.length * this.dateList.length) {
+      if (newQuestion == this.MusicTypeCount * this.dateList.length) {
         //
         this.LoadDataE(this.$GetList(this.datalist));
         this.isLoad = false;
@@ -130,6 +152,9 @@ export default {
   methods: {
     // 切换时间
     changeDate(value) {
+      if (value.length <= 0) {
+        return;
+      }
       const start = new Date(value[0]);
       const end = new Date(value[1]);
       var time = new Date();
@@ -146,7 +171,7 @@ export default {
     },
     // 递归生成查询日期List
     getdatelist(start, end) {
-      var time = 24 * 60 * 60 * 1000;
+      var time = 1 * 60 * 60 * 1000;
       if (end - start > time) {
         this.dateList.push({
           start: this.getdatastr(new Date(start)),
@@ -200,11 +225,12 @@ export default {
                     intervals: params.intervals
                   });
                 }
-                _this.searchcount++;
               }
-            })
-            .catch(err => {
               _this.searchcount++;
+            })
+            .catch(error => {
+              _this.searchcount++;
+              console.log(error);
             });
         });
       }
