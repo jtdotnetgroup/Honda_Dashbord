@@ -1,10 +1,9 @@
-import MusicType from "@/assets/data/musictype.json"    // 所有线路  
 // 请求参数 
 var state = ['运行', '空闲', '报警'];           // 状态描述
 var colors = ["green", "gray", "red"]; // 状态颜色 
 
 // 获取Echarts 所需的对象
-function GetList(datalist1) {
+function GetList(datalist1, currentType) {
 
     // var datalist = [];
     // var obj = { id: '11e9de67-3436-556c-8f92-0242ac110004', name: '7线', list: one };
@@ -15,14 +14,14 @@ function GetList(datalist1) {
     // datalist.push(obj2);
     // var obj3 = { id: '11e9ef34-cfe8-153c-8f92-0242ac110004', name: '歧管L2', list: four };
     // datalist.push(obj3); 
-    return GetEchartsObj(datalist1);
+    return GetEchartsObj(datalist1, currentType);
 }
 // 返回 Echarts 所需要的对象
-function GetEchartsObj(datalist) {
-    // 
+function GetEchartsObj(datalist, currentType) {
+    //  
     var y = [];         // Y轴
     var series = [];    // 内容
-    MusicType.currentType.forEach(tmp => {
+    currentType.reverse().forEach(tmp => {
         // 形成Y轴
         y.push(tmp.name);
         // 数据添加到那条线
@@ -40,7 +39,7 @@ function GetEchartsObj(datalist) {
                 // console(sortBykey(f.list, 'time'));
             }
             sortBykey(f.list, 'time').forEach((item, index) => {
-                
+
                 // 判断使用颜色
                 var intstate = GetState(item['al'] * 1, item['rs'] * 1);
                 // 当前数据时间
@@ -74,21 +73,21 @@ function GetEchartsObj(datalist) {
                 }
                 // 最后一条
                 if (index === f.list.length - 1 && CurrentState !== intstate) {
-                    series.push({
+                    series.push({ 
                         itemStyle:
-                        {
+                        { 
                             normal: {
                                 color: colors[CurrentState]  //条形颜色
                             }
                         },
                         name: f.name + ' ' + state[CurrentState],   // 悬浮时显示的名字
-                        value: [num, FirstTime, CurrentTime==null?'1':CurrentTime] //0,1,2代表y轴的索引，后两位代表x轴数据开始和结束
+                        value: [num, FirstTime, CurrentTime == null ? '1' : CurrentTime] //0,1,2代表y轴的索引，后两位代表x轴数据开始和结束
                     });
                 }
                 // 添加数据
                 if (tf && index !== 0) {
-                    if(end==null){end =start}
-                    series.push({ 
+                    if (end == null) { end = start }
+                    series.push({
                         itemStyle:
                         {
                             normal: {
@@ -114,7 +113,7 @@ function GetEchartsObj(datalist) {
         series: series,
         state: state,
         colors: colors,
-        datalist:datalist
+        datalist: datalist
     }
     return result;
 
@@ -122,7 +121,7 @@ function GetEchartsObj(datalist) {
 // 对象集合排序
 function sortBykey(ary, key) {
     return ary.sort(function (a, b) {
-        let x = a[key] 
+        let x = a[key]
         let y = b[key]
         return x < y ? -1 : x < y ? 1 : 0;
     })
@@ -131,11 +130,11 @@ function sortBykey(ary, key) {
 function GetState(al, rs) {
     var intstate = 0;
     if (al * 1 !== 0) {
-        return  2;
+        return 2;
     } else if (rs * 1 === 3 && al * 1 === 0) {
-        return  0;
+        return 0;
     } else {
-        return  1;
+        return 1;
     }
 }
 // 返回时间

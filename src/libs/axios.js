@@ -9,7 +9,7 @@ var baseURL = "";
 
 var url = window.location.href
 if (url.indexOf('http://192.168.3') >= 0 || url.indexOf('localhost') >= 0) {
-  baseURL = "http://localhost:53457";
+  baseURL = "http://localhost:3210";
 } else {
   // 正式环境
   baseURL = "http://192.168.1.112:8099";
