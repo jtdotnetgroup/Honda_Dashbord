@@ -161,9 +161,9 @@ export default {
   // 所有方法
   methods: {
     test() {
-       this.$store.dispatch('account/GetToken').then(res => {
-            console.log(res)
-       });
+      //  this.$store.dispatch('account/GetToken').then(res => {
+      //       console.log(res)
+      //  });
       // Login().then(res => {
       //   if (res.data.code === "0") {
       //     this.$TokenObj.access_token = res.data.code.data.access_token 

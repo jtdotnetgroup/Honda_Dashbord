@@ -1,4 +1,4 @@
-import http from "@/libs/axios";
+import http from "@/libs/axios"; 
 export function Login() {
     var params = {
         grant_type: 'company_credential',
@@ -9,7 +9,8 @@ export function Login() {
     }
     return http({
         url: 'http://192.168.220.2/v20/Company/autorize',
-        method: "Post",
+        // url: 'https://receive.symacnc.cn/v20/Company/autorize',
+        method: "post",
         params
     });
 } 

@@ -26,7 +26,7 @@ http.spread = axios.spread;
 var _this = this;
 // 添加请求拦截器  
 http.interceptors.request.use(function (config) { 
-  config.headers.common['access_token'] = sessionStorage.getItem('access_token');
+  // config.headers.common['access_token'] = sessionStorage.getItem('access_token');
   // config.headers.common['grant_type'] = _this.$TokenObj.grant_type
   // 在发送请求之前做些什么
   return config;

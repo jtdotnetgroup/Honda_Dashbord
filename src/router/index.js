@@ -8,6 +8,7 @@ import four from '../views/Report/four.vue'
 import five from '../views/Report/five.vue'
 import six from '../views/Report/six.vue'
 import test from '../views/Report/test.vue'
+import href from '../views/Report/href.vue'
 
 Vue.use(VueRouter)
 
@@ -51,6 +52,11 @@ const routes = [
     path: '/test',
     name: 'test',
     component: test
+  },
+  {
+    path: '/href',
+    name: 'href',
+    component: href
   }
 ]
 
