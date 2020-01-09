@@ -13,7 +13,7 @@ if (url.indexOf('http://192.168.3') >= 0 || url.indexOf('localhost') >= 0) {
 } else {
   // 正式环境
   baseURL = "http://192.168.1.112:8099";
-} 
+}
 // 
 const http = axios.create({
   baseURL: baseURL,
@@ -23,8 +23,11 @@ const http = axios.create({
 });
 http.all = axios.all;
 http.spread = axios.spread;
-// 添加请求拦截器
-http.interceptors.request.use(function (config) {
+var _this = this;
+// 添加请求拦截器  
+http.interceptors.request.use(function (config) { 
+  config.headers.common['access_token'] = sessionStorage.getItem('access_token');
+  // config.headers.common['grant_type'] = _this.$TokenObj.grant_type
   // 在发送请求之前做些什么
   return config;
 }, function (error) {

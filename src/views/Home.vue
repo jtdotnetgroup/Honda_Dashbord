@@ -1,5 +1,5 @@
 <template>
-  <div style='margin-top: 60px;'>
+  <div style="margin-top: 60px;">
     <!-- 加载框 -->
     <van-overlay :show="isLoad">
       <div class="wrapper">
@@ -55,8 +55,10 @@
     <div id="myChart" :style="{ width: '100%', height: '80vh' }"></div>
   </div>
 </template>
+
 <!-- 脚本 -->
 <script>
+import { Login, Tests } from "@/api/account.js"; // 获取数据路径
 import { GetAll, All, AllCPX } from "@/api/ProductState.js"; // 获取数据路径
 import axios from "axios";
 export default {
@@ -159,6 +161,19 @@ export default {
   // 所有方法
   methods: {
     test() {
+       this.$store.dispatch('account/GetToken').then(res => {
+            console.log(res)
+       });
+      // Login().then(res => {
+      //   if (res.data.code === "0") {
+      //     this.$TokenObj.access_token = res.data.code.data.access_token 
+      //     console.log( this.$TokenObj.access_token);
+      //   }
+      // });
+      //  Tests().then(res=>{
+      //   console.log(res)
+      // })
+
       var _this = this;
       axios.get("/static/musictype.json").then(res => {
         if (res.status === 200) {
@@ -167,8 +182,8 @@ export default {
           _this.MusicTypeCount = _this.currentType.length;
           _this.Hour = data.Hour;
           _this.intervals = data.intervals;
-          _this.height=data.height;
-          _this.fontSize=data.fontSize;
+          _this.height = data.height;
+          _this.fontSize = data.fontSize;
           _this.LoadData();
         }
       });

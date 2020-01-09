@@ -1,6 +1,6 @@
 <template>
-  <div id="app"> 
-    <router-view/>
+  <div id="app">
+    <router-view />
   </div>
 </template>
 <!-- 样式脚本 -->
@@ -24,5 +24,11 @@
   width: 120px;
   height: 120px;
   background-color: #fff;
+}
+.p15{
+  padding:15px;
+}
+.el-form-item{
+  margin-bottom:15px;
 }
 </style>
