@@ -37,7 +37,7 @@ export function getTotalAlarmListByDevices(params) {
 // 图四
 export function getAttendanceJson(params) { 
     return http({
-        url: 'http://localhost:63202/ApiData/AttendanceJson',
+        url: 'http://192.168.1.112:8099/ApiData/AttendanceJson',
         method: "Post",
         params
     });

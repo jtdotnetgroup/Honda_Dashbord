@@ -23,17 +23,19 @@
             <div
               class="block"
               style="display: inline-grid;"
-              v-for="(fit, index) in GetImgList(scope.row.fWorkerCode)"
-              :key="Math.random() + fit"
+              v-for="fit in GetImgList(scope.row.fWorkerCodefworkerName)"
+              :key="Math.random() + fit.fWorkerCode"
             >
               <el-image
                 style="width: 100px; height: 100px"
-                :src="'http://192.168.1.112:8099/imges/' + fit + '.jpg'"
+                :src="
+                  'http://192.168.1.112:8099/imges/' + fit.fWorkerCode + '.jpg'
+                "
               ></el-image>
               <span
                 class="demonstration"
                 style="text-align: center;padding-right: 20px;"
-                >{{ GetImgListName(index, scope.row.fworkerName) }}</span
+                >{{ fit.fworkerName }}</span
               >
             </div>
           </div>
@@ -47,37 +49,84 @@
 import { getAttendanceJson } from "@/api/equipment.js"; // 获取数据路径
 
 export default {
+  name: "Attendance",
   data() {
     return {
       value1: new Date(),
-      tableData: []
+      tableData: [],
+      scrollType: "top", // 滚动类型
+      scrollHeight: 0, // 当前滚动到的位置
+      documentHeight: 0, // 滚动条高度
+      scrollIndex: 1, // 滚动页数
+      isScroll: true // 是否开启滚动条
     };
   }, //
   mounted() {
+    var timer = null;
+    var _this = this;
+    window.onmousemove = function() {
+      _this.isScroll = false;
+      clearTimeout(timer);
+      // console.log(this.isScroll); // 移动时
+      timer = setTimeout(function() {
+        _this.isScroll = true;
+        // console.log(this.isScroll); // 静止后
+      }, 10000);
+    };
     this.OnSearch();
   },
   methods: {
-    GetImgList(fWorkerCode) {
-      var arr = (fWorkerCode + "").split(",");
-      return arr;
+    GetImgList(fWorkerCodefworkerName) {
+      var arr = (fWorkerCodefworkerName + "").split(",");
+      var list = [];
+      arr.forEach(f => {
+        if (f.length > 0) {
+          var obj = {};
+          obj.fWorkerCode = f.split("|")[0];
+          obj.fworkerName = f.split("|")[1];
+          list.push(obj);
+        }
+      });
+      console.log(list);
+      return list;
     },
-    GetImgListName(index, Name) { 
-      var arr = (Name + "").split(",");
-      console.log(arr+'_'+index);
-      return arr[index];
-    }, 
     OnSearch() {
       var _this = this;
       this.tableData = [];
       var obj = { dateTime: this.value1 };
       getAttendanceJson(obj).then(res => {
-        console.log(res);
+        // console.log(res);
         if (res.data.IsSuccess) {
           var result = JSON.parse(res.data.Data);
-          _this.tableData = result;
+          _this.tableData = result.Table;
+          _this.documentHeight = document.documentElement.scrollHeight;
         }
       });
-      window.scrollTo(0,window.screen.height);
+    },
+    tz() {
+      window.scrollTo(0, 0);
+      // console.log(document.documentElement.scrollHeight);
+    }
+  },
+  watch: {
+    scrollIndex: function(val) {
+      var clientHeight = document.documentElement.clientHeight;
+      if (val * clientHeight - this.documentHeight > this.documentHeight) {
+        this.scrollIndex = 0;
+      }
+      if (this.isScroll) {
+        window.scrollTo(0, val * clientHeight);
+      }
+    },
+    documentHeight: function(val) {
+      //  setTimeout(function() {
+      //    console.log(1)
+      //  },1000)
+      this.scrollIndex = 0;
+      var _this = this;
+      setInterval(function() {
+        _this.scrollIndex++;
+      }, 5000);
     }
   }
 };
